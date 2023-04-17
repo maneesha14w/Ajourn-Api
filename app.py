@@ -1,28 +1,67 @@
 from flask import Flask, request, jsonify
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-import string
+
 import numpy as np
 import tensorflow as tf
 import pickle
-
-
+import string
+import json
 
 
 app = Flask(__name__)
 sent = SentimentIntensityAnalyzer()
-
+no_sent_model = tf.keras.models.load_model('models/no sent/model_without_sent_as_feature.h5')
+labels = {0: 'healthanxiety', 1: 'socialanxiety', 2: 'anxiety'}
+tokenizer_no_sent = 'models/no sent/tokenizer_no_sent.pickle'
 
 def sent_analysis(text):
     scores = sent.polarity_scores(text)
     return scores
 
+def preprocessing(text, tokenizer):
+
+    text = ''.join(filter(lambda x: x in string.printable, text))
+    # Load Tokenizer
+    with open(tokenizer, 'rb') as handle:
+        tokenizer = pickle.load(handle)
+
+    # sentiment_dict = sent_analysis(text)
+    # sent_arr = [value for value in sentiment_dict.values()]
+    # sent_arr.pop()
+    # print(sent_arr)
+
+    #Sequencing
+    sequences = tokenizer.texts_to_sequences(text)
+    padded = tf.keras.preprocessing.sequence.pad_sequences(sequences, truncating='post', padding='post', maxlen=3483)
+    #input = np.concatenate((padded, sent_arr)) 
+    return padded
+
+@app.route('/pre',methods=['POST'])
+# def pre():
+#     text = request.get_json()['text']
+#     padded = preprocessing(text)
+#     sentiment_dict = sent_analysis(text)
+#     print(sentiment_dict)
+#     sent_arr = [value for value in sentiment_dict.values()]
+#     sent_arr.pop()
+#     sent_arr = np.array(sent_arr)
+#     input = [padded, sent_arr]
+#     input = np.array(input, dtype=object)
+#     print(input)
+#     print(input.shape)
+
+#     input = input.tolist()
+
+#     return jsonify()
+
+
+def map_label_to_text(label):
+    return labels[label]
 
 @app.route('/')
 def index():
-    print ('Hello, World! TensorFlow version: {}'.format(tf.__version__))
-    print('Request for index page received')
-    return 'Hello World!'
+    return 'Ajourn Api'
 
 
 # TYPE OF REQUEST
@@ -36,32 +75,57 @@ def sentiment_analysis():
     scores = sent.polarity_scores(text)
     return jsonify(scores)
 
-@app.route('/model', methods=['POST'])
+@app.route('/model_no_sent', methods=['POST'])
 def anxiety_detection():
-    print('Request for anxiety detection received')
+    print('Request for anxiety detection received: MODEL NO SENT')
     text = request.get_json()['text']
-    #text = ''.join(filter(lambda x: x in string.printable, text))
-    text = "'{}'".format(text)
-    print(text)
-
-    sentiment_dict = sent_analysis(text)
-    sent_arr = [value for value in sentiment_dict.values()]
-    sent_arr.pop()
-    sent_arr = np.array(sent_arr)
-    sent_arr = np.reshape(sent_arr, (1, 3))
     
-    # Load Tokenizer
-    with open('tokenizer.pkl', 'rb') as handle:
-        tokenizer = pickle.load(handle)
+    input = preprocessing(text, tokenizer_no_sent)
+    
+    pred = no_sent_model.predict(input)
 
-    # #sequencing
-    sequences = tokenizer.texts_to_sequences(text)
-    padded = tf.keras.preprocessing.sequence.pad_sequences(sequences, truncating='post', padding='post', maxlen=3483) 
 
-    # #concating sentiment
-    inputs = np.append(padded, sent_arr)
-    return jsonify(sequences)
+    # Find index of highest probability for the predicted class
+    predicted_index = np.argmax(pred)
+    print(predicted_index)
+    # maps the prediction probabilities at the predicted_index position of the pred array to the corresponding label names in the labels dictionary.
+    label_probs = dict(zip(labels.values(), pred[predicted_index]))
+    print(label_probs)
+    # Convert the dictionary values to float
+    label_probs = {k: v.item() for k, v in label_probs.items()}
+
+    return jsonify(label_probs)
 
 
 if __name__ == '__main__':
    app.run()
+
+
+
+#    @app.route('/model', methods=['POST'])
+# def anxiety_detection():
+#     print('Request for anxiety detection received')
+#     text = request.get_json()['text']
+#     #text = ''.join(filter(lambda x: x in string.printable, text))
+#     input = preprocessing(text)
+    
+#     text = "'{}'".format(text)
+#     print(text)
+
+#     sentiment_dict = sent_analysis(text)
+#     sent_arr = [value for value in sentiment_dict.values()]
+#     sent_arr.pop()
+#     sent_arr = np.array(sent_arr)
+#     sent_arr = np.reshape(sent_arr, (1, 3))
+    
+#     # Load Tokenizer
+#     with open('tokenizer.pkl', 'rb') as handle:
+#         tokenizer = pickle.load(handle)
+
+#     # #sequencing
+#     sequences = tokenizer.texts_to_sequences(text)
+#     padded = tf.keras.preprocessing.sequence.pad_sequences(sequences, truncating='post', padding='post', maxlen=3483) 
+
+#     # #concating sentiment
+#     inputs = np.append(padded, sent_arr)
+#     return jsonify(sequences)
