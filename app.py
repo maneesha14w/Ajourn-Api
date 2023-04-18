@@ -6,7 +6,6 @@ import numpy as np
 import tensorflow as tf
 import pickle
 import string
-import json
 
 
 app = Flask(__name__)
@@ -56,9 +55,6 @@ def preprocessing(text, tokenizer):
 #     return jsonify()
 
 
-def map_label_to_text(label):
-    return labels[label]
-
 @app.route('/')
 def index():
     return 'Ajourn Api'
@@ -84,13 +80,14 @@ def anxiety_detection():
     
     pred = no_sent_model.predict(input)
 
-
     # Find index of highest probability for the predicted class
     predicted_index = np.argmax(pred)
     print(predicted_index)
+
     # maps the prediction probabilities at the predicted_index position of the pred array to the corresponding label names in the labels dictionary.
     label_probs = dict(zip(labels.values(), pred[predicted_index]))
     print(label_probs)
+
     # Convert the dictionary values to float
     label_probs = {k: v.item() for k, v in label_probs.items()}
 
