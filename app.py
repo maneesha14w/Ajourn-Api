@@ -19,20 +19,24 @@ def sent_analysis(text):
     return scores
 
 def preprocessing(text, tokenizer):
-
+    print('2')
     text = ''.join(filter(lambda x: x in string.printable, text))
+    print('3')
     # Load Tokenizer
     with open(tokenizer, 'rb') as handle:
+        print('4')
         tokenizer = pickle.load(handle)
 
     # sentiment_dict = sent_analysis(text)
     # sent_arr = [value for value in sentiment_dict.values()]
     # sent_arr.pop()
     # print(sent_arr)
-
+    print('5')
     #Sequencing
     sequences = tokenizer.texts_to_sequences(text)
+    print('6')
     padded = tf.keras.preprocessing.sequence.pad_sequences(sequences, truncating='post', padding='post', maxlen=3483)
+    print('7')
     #input = np.concatenate((padded, sent_arr)) 
     return padded
 
@@ -75,22 +79,26 @@ def sentiment_analysis():
 def anxiety_detection():
     print('Request for anxiety detection received: MODEL NO SENT')
     text = request.get_json()['text']
-    
+    print(text)
+    print('1')
     input = preprocessing(text, tokenizer_no_sent)
-    
+    print('8')
     pred = no_sent_model.predict(input)
-
+    print('9')
     # Find index of highest probability for the predicted class
+    print('10')
     predicted_index = np.argmax(pred)
+    print('11')
     print(predicted_index)
-
+    print('12')
     # maps the prediction probabilities at the predicted_index position of the pred array to the corresponding label names in the labels dictionary.
     label_probs = dict(zip(labels.values(), pred[predicted_index]))
+    print('13')
     print(label_probs)
-
+    print('14')
     # Convert the dictionary values to float
     label_probs = {k: v.item() for k, v in label_probs.items()}
-
+    
     return jsonify(label_probs)
 
 
