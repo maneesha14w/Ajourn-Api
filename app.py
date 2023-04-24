@@ -10,10 +10,10 @@ import string
 
 app = Flask(__name__)
 sent = SentimentIntensityAnalyzer()
-model = tf.keras.models.load_model('models/no sent/weighted_no_sent/model_without_sent_as_feature(weighed).h5')
+model = tf.keras.models.load_model('models/no_sent/weighted_no_sent/weighted_model_without_sent_as_feature.h5')
 # tf.keras.models.load_model('models/no sent/model_without_sent_as_feature.h5')
 labels = {0: 'healthanxiety', 1: 'socialanxiety', 2: 'anxiety'}
-tokenizer = 'models/no sent/weighted_no_sent/tokenizer_no_sent_weighed.pickle'
+tokenizer = 'models/no_sent/weighted_no_sent/tokenizer_no_sent_weighed.pickle'
 #tokenizer_no_sent = 'models/no sent/tokenizer_no_sent.pickle'
 
 def sent_analysis(text):
