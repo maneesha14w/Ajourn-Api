@@ -10,10 +10,10 @@ import string
 
 app = Flask(__name__)
 sent = SentimentIntensityAnalyzer()
-model = tf.keras.models.load_model('models/no_sent/weighted_no_sent/weighted_model_without_sent_as_feature.h5')
+model = tf.keras.models.load_model('models/no_sent/weighted_model_without_sent_as_feature.h5')
 # tf.keras.models.load_model('models/no sent/model_without_sent_as_feature.h5')
 labels = {0: 'healthanxiety', 1: 'socialanxiety', 2: 'anxiety'}
-tokenizer = 'models/no_sent/weighted_no_sent/tokenizer_no_sent_weighed.pickle'
+tokenizer = 'models/no_sent/tokenizer_no_sent_weighted.pickle'
 #tokenizer_no_sent = 'models/no sent/tokenizer_no_sent.pickle'
 
 def sent_analysis(text):
@@ -21,19 +21,14 @@ def sent_analysis(text):
     return scores
 
 def preprocessing(text, tokenizer):
-    
-    
     text = ''.join(filter(lambda x: x in string.printable, text))
-  
     # Load Tokenizer
     with open(tokenizer, 'rb') as handle:
-       
         tokenizer = pickle.load(handle)
 
     # sentiment_dict = sent_analysis(text)
     # sentiment_dict.pop('compound')
 
-   
     #Sequencing
     sequences = tokenizer.texts_to_sequences(text)
   
@@ -61,7 +56,6 @@ def sentiment_analysis():
 
 @app.route('/model', methods=['POST'])
 def anxiety_detection():
-    global sentiment_dict;
     print('Request for anxiety detection received')
     text = request.get_json()['text']
     print(text)
